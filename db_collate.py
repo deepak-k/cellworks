@@ -8,7 +8,7 @@ import MySQLdb
 
 
 # Index of each field in OncoKB mapped to standard table fmt.
-#
+
 def MapOncokb(d):
     d['Database'] = 'OncoKB'
     d['Mutation'] = 0
