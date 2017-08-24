@@ -6,8 +6,9 @@
 import csv
 import MySQLdb
 
+
 # Index of each field in OncoKB mapped to standard table fmt.
-# 
+#
 def MapOncokb(d):
     d['Database'] = 'OncoKB'
     d['Mutation'] = 0
@@ -106,7 +107,7 @@ def WriteDB(dbFd, dbMap, row):
     if (dbMap['Reference'] != 99999):
         tblRow[9] = row [dbMap['Reference']]
 
-    print tblRow;
+    return tblRow     
 
 
 
@@ -114,23 +115,29 @@ def WriteDB(dbFd, dbMap, row):
 
 dbFd = 1   # stdout will be the 'DB' for now.
 
+myfile = open('final_record.csv', 'wb+')
+writer = csv.writer(myfile, delimiter=',')
+
 oncoMap = dict();
 MapOncokb(oncoMap)
 with open('oncoKB_tmp.csv', 'rb') as csvFd:
     reader = csv.reader(csvFd, delimiter='\t')
     for row in reader:
-        WriteDB(dbFd, oncoMap, row)
-
+        lin = WriteDB(dbFd, oncoMap, row)
+        writer.writerow(lin)
 civicMap = dict()
 MapCivic(civicMap)
 with open('civic_tmp.csv', 'rb') as csvFd:
     reader = csv.reader(csvFd, delimiter='\t')
     for row in reader:
-        WriteDB(dbFd, civicMap, row)
+        lin = WriteDB(dbFd, civicMap, row)
+        writer.writerow(lin)
 
 synapseMap = dict()
 MapSynapse(synapseMap)
 with open('synapse_tmp.csv', 'rb') as csvFd:
     reader = csv.reader(csvFd, delimiter=',')
     for row in reader:
-        WriteDB(dbFd, synapseMap, row)    
+        lin = WriteDB(dbFd, synapseMap, row)
+        writer.writerow(lin)
+          
