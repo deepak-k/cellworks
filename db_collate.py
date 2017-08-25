@@ -8,7 +8,7 @@ import MySQLdb
 
 
 # Index of each field in OncoKB mapped to standard table fmt.
-
+#
 def MapOncokb(d):
     d['Database'] = 'OncoKB'
     d['Mutation'] = 0
@@ -141,3 +141,22 @@ with open('synapse_tmp.csv', 'rb') as csvFd:
         lin = WriteDB(dbFd, synapseMap, row)
         writer.writerow(lin)
           
+
+
+#Store final data in mysql database.
+
+database = MySQLdb.connect(host='localhost', user='root', passwd='admin123')
+cursor = database.cursor()
+create_database = "CREATE DATABASE IF NOT EXISTS cellworks"
+cursor.execute(create_database)
+database = MySQLdb.connect(host='localhost', user='root', passwd='admin123', db='cellworks')
+cursor = database.cursor()
+create_table = "CREATE TABLE IF NOT EXISTS final_data (Data VARCHAR(255), Mutation VARCHAR(255), Signature VARCHAR(255), Varient VARCHAR(255), Functionality VARCHAR(255), Impact VARCHAR(255), Indication VARCHAR(255), Domain VARCHAR(255), Classification VARCHAR(255), Refrence VARCHAR(255))"
+cursor.execute(create_table)
+file  = open('final_record.csv', "rb")
+reader = csv.reader(file)
+for row in reader:
+    cursor.execute('INSERT INTO final_data (Data,Mutation,Signature,Varient,Functionality,Impact,Indication,Domain,Classification,Refrence) VALUES("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")', (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]))
+    #print row
+database.commit()
+cursor.close()
