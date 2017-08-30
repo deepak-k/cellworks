@@ -7,6 +7,39 @@ import csv
 import MySQLdb
 
 
+# Use variants.tsv
+def MapDocm(d):
+    d['Database'] = 'Docm'
+    d['Mutation'] = 7
+    d['Signature'] = 9   # IMPT: Remove the "p."
+    d['Variant'] = 99999
+    d['Functionality'] = 99999
+    d['Impact'] = 99999
+    d['Indication'] = 99999
+    d['Domain'] = 99999
+    d['Classification'] = 99999
+    d['Reference'] = 11
+
+    return d
+
+
+# Use candl
+def MapCandl(d):
+    d['Database'] = 'Candl'
+    d['Mutation'] = 1
+    d['Signature'] = 6 # TODO IMPT: Combination of Columns C, D & E
+    d['Variant'] = 99999
+    d['Functionality'] = 99999
+    d['Impact'] = 99999
+    d['Indication'] = 99999
+    d['Domain'] = 99999
+    d['Classification'] = 99999
+    d['Reference'] = TODO Column 'P'
+
+    return d
+
+
+
 # Index of each field in OncoKB mapped to standard table fmt.
 #
 def MapOncokb(d):
