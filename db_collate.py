@@ -110,24 +110,23 @@ def WriteDB(dbFd, dbMap, row):
     return tblRow     
 
 
-
 ##  main()
 
 dbFd = 1   # stdout will be the 'DB' for now.
 
-myfile = open('final_record.csv', 'wb+')
+myfile = open('/home/soumya/cellworks/final_record.csv', 'wb+')
 writer = csv.writer(myfile, delimiter=',')
 
 oncoMap = dict();
 MapOncokb(oncoMap)
-with open('oncoKB_tmp.csv', 'rb') as csvFd:
+with open('/home/soumya/cellworks/oncoKB_tmp.csv', 'rb') as csvFd:
     reader = csv.reader(csvFd, delimiter='\t')
     for row in reader:
         lin = WriteDB(dbFd, oncoMap, row)
         writer.writerow(lin)
 civicMap = dict()
 MapCivic(civicMap)
-with open('civic_tmp.csv', 'rb') as csvFd:
+with open('/home/soumya/cellworks/civic_tmp.csv', 'rb') as csvFd:
     reader = csv.reader(csvFd, delimiter='\t')
     for row in reader:
         lin = WriteDB(dbFd, civicMap, row)
@@ -135,7 +134,7 @@ with open('civic_tmp.csv', 'rb') as csvFd:
 
 synapseMap = dict()
 MapSynapse(synapseMap)
-with open('synapse_tmp.csv', 'rb') as csvFd:
+with open('/home/soumya/cellworks/synapse_tmp.csv', 'rb') as csvFd:
     reader = csv.reader(csvFd, delimiter=',')
     for row in reader:
         lin = WriteDB(dbFd, synapseMap, row)
@@ -145,11 +144,11 @@ with open('synapse_tmp.csv', 'rb') as csvFd:
 
 #Store final data in mysql database.
 
-database = MySQLdb.connect(host='localhost', user='root', passwd='admin123')
+database = MySQLdb.connect(host='localhost', user='root', passwd='root')
 cursor = database.cursor()
 create_database = "CREATE DATABASE IF NOT EXISTS cellworks"
 cursor.execute(create_database)
-database = MySQLdb.connect(host='localhost', user='root', passwd='admin123', db='cellworks')
+database = MySQLdb.connect(host='localhost', user='root', passwd='root', db='cellworks')
 cursor = database.cursor()
 create_table = "CREATE TABLE IF NOT EXISTS final_data (Data VARCHAR(255), Mutation VARCHAR(255), Signature VARCHAR(255), Varient VARCHAR(255), Functionality VARCHAR(255), Impact VARCHAR(255), Indication VARCHAR(255), Domain VARCHAR(255), Classification VARCHAR(255), Refrence VARCHAR(255))"
 cursor.execute(create_table)
