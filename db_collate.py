@@ -12,7 +12,7 @@ import MySQLdb
 def MapOncokb(d):
     d['Database'] = 'OncoKB'
     d['Mutation'] = 0
-    d['Signature'] = 1
+    d['Signature'] = 1   # BUG: Remove Truncating Mutation, Promoter Mutation
     d['Variant'] = 99999
     d['Functionality'] = 3
     d['Impact'] = 99999
@@ -51,7 +51,7 @@ def MapSynapse(d):
     d['Variant'] = 3
     d['Functionality'] = 4
     d['Impact'] = 99999
-    d['Indication'] = 99999
+    d['Indication'] = 99999    # DISEASE (Column 1)
     d['Domain'] = 99999
     d['Classification'] = 99999
     d['Reference'] = 9
@@ -63,12 +63,12 @@ def MapSynapse(d):
 # Standardise fuctionality to LOF, GOF, etc in the various DB's
 def MapFunctionality(str):
     functionality = { # OncoKB map
-         'Loss-of-function': 'LOF', 'Likely Loss-of-function': 'LOF',
-         'Gain-of-function': 'GOF', 'Likely Gain-of-function': 'GOF',         
-         'Switch-of-function': 'SOF', 'Likely Switch-of-function': 'SOF',         
-         'Mutation Effect': 'COF', 'Likely Mutation Effect': 'COF',         
+         'Loss-of-function': 'LOF', 'Likely Loss-of-function': 'Likely LOF',
+         'Gain-of-function': 'GOF', 'Likely Gain-of-function': 'Likely GOF',         
+         'Switch-of-function': 'SOF', 'Likely Switch-of-function': 'Likely SOF',         
+         'Mutation Effect': 'COF', 'Likely Mutation Effect': 'Likely COF',         
          'Inconclusive':  'Inconclusive',
-         'Neutral':  'Neutral', 'Likely Neutral':  'Neutral',
+         'Neutral':  'COF', 'Likely Neutral':  'COF',
          # 
          #synapse
          'gain-of-function': 'GOF', 'gain-of-function (low activity)': 'GOF',
@@ -145,18 +145,21 @@ with open('synapse_tmp.csv', 'rb') as csvFd:
 
 #Store final data in mysql database.
 
-database = MySQLdb.connect(host='localhost', user='root', passwd='admin123')
+database = MySQLdb.connect(host='localhost', user='drupal', passwd='drupal123')
 cursor = database.cursor()
-create_database = "CREATE DATABASE IF NOT EXISTS cellworks"
-cursor.execute(create_database)
-database = MySQLdb.connect(host='localhost', user='root', passwd='admin123', db='cellworks')
-cursor = database.cursor()
-create_table = "CREATE TABLE IF NOT EXISTS final_data (Data VARCHAR(255), Mutation VARCHAR(255), Signature VARCHAR(255), Varient VARCHAR(255), Functionality VARCHAR(255), Impact VARCHAR(255), Indication VARCHAR(255), Domain VARCHAR(255), Classification VARCHAR(255), Refrence VARCHAR(255))"
+use_DB = "USE cellworks"
+cursor.execute(use_DB)
+create_table = "CREATE TABLE IF NOT EXISTS final_data (Data VARCHAR(255), Mutation VARCHAR(255), Signature VARCHAR(255), Variant VARCHAR(255), Functionality VARCHAR(255), Impact VARCHAR(255), Indication VARCHAR(255), Domain VARCHAR(255), Classification VARCHAR(255), Refrence VARCHAR(255))"
 cursor.execute(create_table)
 file  = open('final_record.csv', "rb")
 reader = csv.reader(file)
 for row in reader:
-    cursor.execute('INSERT INTO final_data (Data,Mutation,Signature,Varient,Functionality,Impact,Indication,Domain,Classification,Refrence) VALUES("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")', (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]))
+    if len(row) == 10:
+        cursor.execute('INSERT INTO final_data (Data,Mutation,Signature,Variant,Functionality,Impact,Indication,Domain,Classification,Refrence) VALUES("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")', (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]))
+    else:
+        print "Error in row len, not written to DB"
+        print row
+
     #print row
 database.commit()
 cursor.close()
