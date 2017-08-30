@@ -48,7 +48,7 @@ def WriteDB(dbFd, dbMap, row):
 
     tblRow[0] = dbMap['Database']
     tblRow[1] = row [dbMap['Mutation']]
-    tblRow[2] =  (row [dbMap['Signature']])
+    tblRow[2] = row [dbMap['Signature']]
     if (dbMap['Variant'] != 99999):
         tblRow[3] = (row [dbMap['Variant']])
     if (dbMap['Functionality'] != 99999):
@@ -67,6 +67,17 @@ def WriteDB(dbFd, dbMap, row):
     return tblRow   
   
 dbFd = 1
+
+myfile = open('/home/soumya/cellworks/finalrecord.csv', 'w')
+writer = csv.writer(myfile, delimiter=',')
+
+oncoMap = dict();
+MapOncokb(oncoMap)
+with open('/home/soumya/cellworks/oncocsv.csv', 'r') as csvFd:
+    reader = csv.reader(csvFd, delimiter='\t')
+    for row in reader:
+        lin = WriteDB(dbFd, oncoMap, row)
+        writer.writerow(lin)
 
 
 database = MySQLdb.connect(host='localhost', user='root', passwd='root')
