@@ -5,15 +5,23 @@ import MySQLdb
 from urllib.request import urlretrieve
 import os
 
+
 url = "http://oncokb.org/api/v1/utils/allAnnotatedVariants.txt"
 urlretrieve(url,"oncotxt.txt")
 
-with open('oncotxt.txt', 'r') as infile, open('oncocsv.csv', 'w') as outfile:
+with open('oncotxt.txt', 'r') as infile, open('test.csv', 'w') as outfile:
     in_txt = csv.reader(infile, delimiter = '\t')
+    
     out_csv = csv.writer(outfile)
     out_csv.writerows(in_txt)
-    
+with open("test.csv",'r') as f:
+    with open("oncocsv.csv",'w') as f1:
+        next(f) # skip header line
+        for line in f:
+            f1.write(line)
+        
 os.remove('oncotxt.txt')
+os.remove('test.csv')
 
 def MapOncokb(d):
     d['Database'] = 'OncoKB'
@@ -36,23 +44,25 @@ def MapFunctionality(str):
          'Switch-of-function': 'SOF', 'Likely Switch-of-function': 'SOF',         
          'Mutation Effect': 'COF', 'Likely Mutation Effect': 'COF',         
          'Inconclusive':  'Inconclusive',
-         'Neutral':  'Neutral', 'Likely Neutral':  'Neutral',
-         #
+         'Neutral':  'Neutral', 'Likely Neutral':  'Neutral', 'null': 'NA',
+         # 
+        
          }
 
     return functionality[str.strip()]
 
 
 def WriteDB(dbFd, dbMap, row):
+    
     tblRow = 10*['NA']
 
     tblRow[0] = dbMap['Database']
     tblRow[1] = row [dbMap['Mutation']]
-    tblRow[2] = row [dbMap['Signature']]
+    tblRow[2] =  row [dbMap['Signature']]
     if (dbMap['Variant'] != 99999):
         tblRow[3] = (row [dbMap['Variant']])
     if (dbMap['Functionality'] != 99999):
-        tblRow[4] = MapFunctionality (row [dbMap['Functionality']])
+        tblRow[4] =  MapFunctionality (row [dbMap['Functionality']])
     if (dbMap['Impact'] != 99999):
         tblRow[5] = row [dbMap['Impact']]
     if (dbMap['Indication'] != 99999):
@@ -64,31 +74,35 @@ def WriteDB(dbFd, dbMap, row):
     if (dbMap['Reference'] != 99999):
         tblRow[9] = row [dbMap['Reference']]
 
-    return tblRow   
+    return tblRow    
   
 dbFd = 1
 
-myfile = open('/home/soumya/cellworks/finalrecord.csv', 'w')
+myfile = open('finalrecord.csv', 'w')
 writer = csv.writer(myfile, delimiter=',')
 
-oncoMap = dict();
+oncoMap = dict()
 MapOncokb(oncoMap)
-with open('/home/soumya/cellworks/oncocsv.csv', 'r') as csvFd:
-    reader = csv.reader(csvFd, delimiter='\t')
-    for row in reader:
+
+
+with open('oncocsv.csv', 'r') as csvFd: 
+    reader = csv.reader(csvFd, delimiter=',')
+    for row in reader:      
+        
         lin = WriteDB(dbFd, oncoMap, row)
         writer.writerow(lin)
+        
 
 
 database = MySQLdb.connect(host='localhost', user='root', passwd='root')
 cursor = database.cursor()
 create_database = "CREATE DATABASE IF NOT EXISTS cellworksdata"
 cursor.execute(create_database)
-database = MySQLdb.connect(host='localhost', user='root', passwd='root', db='cellworks')
+database = MySQLdb.connect(host='localhost', user='root', passwd='root', db='cellworksdata')
 cursor = database.cursor()
 create_table = "CREATE TABLE IF NOT EXISTS cellworkstable (Data VARCHAR(255), Mutation VARCHAR(255), Signature VARCHAR(255), Variant VARCHAR(255), Functionality VARCHAR(255), Impact VARCHAR(255), Indication VARCHAR(255), Domain VARCHAR(255), Classification VARCHAR(255), Reference VARCHAR(255))"
 cursor.execute(create_table)
-with open('oncocsv.csv', "r") as file:
+with open('finalrecord.csv', "r") as file:
  reader = csv.reader(file)
  for row in reader:
     if len(row) == 10:
@@ -99,3 +113,4 @@ with open('oncocsv.csv', "r") as file:
 database.commit()
 cursor.close()
 os.remove('oncocsv.csv')
+os.remove('finalrecord.csv')
