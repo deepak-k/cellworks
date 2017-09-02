@@ -23,18 +23,19 @@ def MapDocm(d):
     return d
 
 
+
 # Use candl
 def MapCandl(d):
     d['Database'] = 'Candl'
     d['Mutation'] = 1
-    d['Signature'] = 6 # TODO IMPT: Combination of Columns C, D & E
+    d['Signature'] = CombineCandlSig('dummy') # TODO IMPT: Combination of Columns C, D & E
     d['Variant'] = 99999
     d['Functionality'] = 99999
     d['Impact'] = 99999
     d['Indication'] = 99999
     d['Domain'] = 99999
     d['Classification'] = 99999
-    d['Reference'] = TODO Column 'P'
+    d['Reference'] = 15   # TODO Column 'P'
 
     return d
 
@@ -45,7 +46,7 @@ def MapCandl(d):
 def MapOncokb(d):
     d['Database'] = 'OncoKB'
     d['Mutation'] = 0
-    d['Signature'] = 1   # BUG: Remove Truncating Mutation, Promoter Mutation
+    d['Signature'] = 2   # BUG: Remove Truncating Mutation, Promoter Mutation
     d['Variant'] = 99999
     d['Functionality'] = 3
     d['Impact'] = 99999
@@ -55,7 +56,6 @@ def MapOncokb(d):
     d['Reference'] = 4
 
     return d
-
 
 
 
@@ -75,6 +75,15 @@ def MapCivic(d):
 
     return d
 
+
+
+def MapSynapseReference (lst, row):
+    refs = ''
+    for pos in lst:
+        refs = refs + ',' + row[pos]
+
+    return refs
+
 # # Index of each field in Synapse DB mapped to standard table fmt.
 # # 
 def MapSynapse(d):
@@ -87,7 +96,7 @@ def MapSynapse(d):
     d['Indication'] = 99999    # DISEASE (Column 1)
     d['Domain'] = 99999
     d['Classification'] = 99999
-    d['Reference'] = 9
+    d['Reference'] = [MapSynapseReference, 9,15,29]
 
     return d    
 
@@ -102,7 +111,7 @@ def MapFunctionality(str):
          'Mutation Effect': 'COF', 'Likely Mutation Effect': 'Likely COF',         
          'Inconclusive':  'Inconclusive',
          'Neutral':  'COF', 'Likely Neutral':  'COF',
-         # 
+         #
          #synapse
          'gain-of-function': 'GOF', 'gain-of-function (low activity)': 'GOF',
          'loss-of-function' : 'LOF', 'switch-of-function': 'SOF',
@@ -137,8 +146,10 @@ def WriteDB(dbFd, dbMap, row):
         tblRow[7] = row [dbMap['Domain']]
     if (dbMap['Classification'] != 99999):
         tblRow[8] = row [dbMap['Classification']]
-    if (dbMap['Reference'] != 99999):
-        tblRow[9] = row [dbMap['Reference']]
+    if isinstance(dbMap['Reference'], list):
+        tblRow[9] = dbMap['Reference'][0] (dbMap['Reference'][1:], row)
+    elif (dbMap['Reference'] != 99999):
+            tblRow[9] = row [dbMap['Reference']]
 
     return tblRow     
 
@@ -151,6 +162,7 @@ dbFd = 1   # stdout will be the 'DB' for now.
 myfile = open('final_record.csv', 'wb+')
 writer = csv.writer(myfile, delimiter=',')
 
+'''
 oncoMap = dict();
 MapOncokb(oncoMap)
 with open('oncoKB_tmp.csv', 'rb') as csvFd:
@@ -165,7 +177,7 @@ with open('civic_tmp.csv', 'rb') as csvFd:
     for row in reader:
         lin = WriteDB(dbFd, civicMap, row)
         writer.writerow(lin)
-
+'''
 synapseMap = dict()
 MapSynapse(synapseMap)
 with open('synapse_tmp.csv', 'rb') as csvFd:
@@ -178,21 +190,43 @@ with open('synapse_tmp.csv', 'rb') as csvFd:
 
 #Store final data in mysql database.
 
-database = MySQLdb.connect(host='localhost', user='drupal', passwd='drupal123')
-cursor = database.cursor()
-use_DB = "USE cellworks"
-cursor.execute(use_DB)
-create_table = "CREATE TABLE IF NOT EXISTS final_data (Data VARCHAR(255), Mutation VARCHAR(255), Signature VARCHAR(255), Variant VARCHAR(255), Functionality VARCHAR(255), Impact VARCHAR(255), Indication VARCHAR(255), Domain VARCHAR(255), Classification VARCHAR(255), Refrence VARCHAR(255))"
-cursor.execute(create_table)
+db_conn = MySQLdb.connect(host='localhost', user='drupal', passwd='drupal123')
+cur = db_conn.cursor()
+
+# NOTE: Combining multiple statements and executing at one go with cur.execute() 
+# fails with "ProgrammingError: (2014, "Commands out of sync; you can't run this command now") Error.
+# Something to do with MySQL not able to handle multiple queries at one go.
+qry = 'USE cellworks;'
+cur.execute(qry)
+qry = 'DROP TABLE IF EXISTS final_data'
+cur.execute(qry)
+qry = '''
+CREATE TABLE final_data (Data VARCHAR(255), 
+    Mutation VARCHAR(255), 
+    Signature VARCHAR(255), 
+    Variant VARCHAR(255), 
+    Functionality VARCHAR(255), 
+    Impact VARCHAR(255), 
+    Indication VARCHAR(255), 
+    Domain VARCHAR(255), 
+    Classification VARCHAR(255), 
+    Refrence VARCHAR(255));
+'''
+
+cur.execute(qry)
+
+
 file  = open('final_record.csv', "rb")
 reader = csv.reader(file)
 for row in reader:
     if len(row) == 10:
-        cursor.execute('INSERT INTO final_data (Data,Mutation,Signature,Variant,Functionality,Impact,Indication,Domain,Classification,Refrence) VALUES("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")', (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]))
+        cur.execute('INSERT INTO final_data (Data,Mutation,Signature,Variant,Functionality,Impact, Indication,Domain,Classification,Refrence) VALUES("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")', (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]))
     else:
-        print "Error in row len, not written to DB"
+        print "db_collate: Error in row len, not written to DB"
         print row
 
     #print row
-database.commit()
-cursor.close()
+db_conn.commit()
+cur.close()
+
+
