@@ -7,11 +7,18 @@ import csv
 import MySQLdb
 
 
+# In docm sig, simply need to remove the  'p.' prefix
+# Ex: p.E2419K => E2419K
+#
+def MapDocmSignature (pos, row):
+    col = row[pos[0]]
+    return col[2:]
+
 # Use variants.tsv
 def MapDocm(d):
     d['Database'] = 'Docm'
     d['Mutation'] = 7
-    d['Signature'] = 9   # IMPT: Remove the "p."
+    d['Signature'] = [MapDocmSignature, 9]   # IMPT: Remove the "p."
     d['Variant'] = 99999
     d['Functionality'] = 99999
     d['Impact'] = 99999
@@ -24,11 +31,18 @@ def MapDocm(d):
 
 
 
+# Candl sign is a concate of row C,D,E
+#
+
+def MapCandlSignature(lst,row):
+    sig = row[lst[0]] + row[lst[1]] + row[lst[2]]
+    return sig
+
 # Use candl
 def MapCandl(d):
     d['Database'] = 'Candl'
     d['Mutation'] = 1
-    d['Signature'] = CombineCandlSig('dummy') # TODO IMPT: Combination of Columns C, D & E
+    d['Signature'] = [MapCandlSignature, 2,3,4] # Concatination of Columns C, D & E
     d['Variant'] = 99999
     d['Functionality'] = 99999
     d['Impact'] = 99999
@@ -76,6 +90,9 @@ def MapCivic(d):
 
 # Synapse reference field has multiple columns with PMID's. 
 # Collect PMID's from all columns
+# Params:
+#   lst: List of columns to pick up PMID's
+#   row: CSV row
 #
 def MapSynapseReference (lst, row):
     refs = ''
@@ -100,7 +117,7 @@ def MapSynapse(d):
     d['Indication'] = 99999    # DISEASE (Column 1)
     d['Domain'] = 99999
     d['Classification'] = 99999
-    d['Reference'] = [MapSynapseReference, 9,15,29]
+    d['Reference'] = [MapSynapseReference, 9,14,19,24,29,38,43]  # PMID cols: J,O,T,Y,AD,AN,AS
 
     return d    
 
@@ -137,7 +154,10 @@ def WriteDB(dbFd, dbMap, row):
 
     tblRow[0] = dbMap['Database']
     tblRow[1] = row [dbMap['Mutation']]
-    tblRow[2] =  (row [dbMap['Signature']])
+    if isinstance (dbMap['Signature'], list):
+        tblRow[2] = dbMap['Signature'][0] (dbMap['Signature'][1:], row)
+    else:
+        tblRow[2] =  (row [dbMap['Signature']])
     if (dbMap['Variant'] != 99999):
         tblRow[3] = (row [dbMap['Variant']])
     if (dbMap['Functionality'] != 99999):
@@ -166,6 +186,7 @@ dbFd = 1   # stdout will be the 'DB' for now.
 myfile = open('final_record.csv', 'wb+')
 writer = csv.writer(myfile, delimiter=',')
 
+'''
 oncoMap = dict();
 MapOncokb(oncoMap)
 with open('oncoKB_tmp.csv', 'rb') as csvFd:
@@ -189,7 +210,24 @@ with open('synapse_tmp.csv', 'rb') as csvFd:
     for row in reader:
         lin = WriteDB(dbFd, synapseMap, row)
         writer.writerow(lin)
-          
+
+docmMap = dict()
+MapDocm(docmMap)
+with open('docm_tmp.tsv', 'rb') as csvFd:
+    reader = csv.reader(csvFd, delimiter='\t')
+    for row in reader:
+        lin = WriteDB(dbFd, docmMap, row)
+        writer.writerow(lin)
+'''
+
+candlMap = dict()
+MapCandl(candlMap)
+with open('candl_tmp.csv', 'rb') as csvFd:
+    reader = csv.reader(csvFd, delimiter=',')
+    for row in reader:
+        lin = WriteDB(dbFd, candlMap, row)
+        writer.writerow(lin)
+         
 myfile.close()
 
 #Store final data in mysql database.
@@ -224,6 +262,7 @@ cur.execute(qry)
 file  = open('final_record.csv', "rb")
 reader = csv.reader(file)
 for row in reader:
+    print row
     if len(row) == 10:
         cur.execute('''INSERT INTO final_data (Source, Mutation,Signature,
                        Variant,Functionality,Impact, Indication,Domain,
