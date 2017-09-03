@@ -57,8 +57,6 @@ def MapOncokb(d):
 
     return d
 
-
-
 # Index of each field in Civic DB mapped to standard table fmt.
 # 
 def MapCivic(d):
@@ -68,7 +66,7 @@ def MapCivic(d):
     d['Variant'] = 3
     d['Functionality'] = 99999
     d['Impact'] = 99999
-    d['Indication'] = 99999
+    d['Indication'] = 3   # Changed; mapped to 'Disease'
     d['Domain'] = 99999
     d['Classification'] = 99999
     d['Reference'] = 11
@@ -76,7 +74,9 @@ def MapCivic(d):
     return d
 
 
-
+# Synapse reference field has multiple columns with PMID's. 
+# Collect PMID's from all columns
+#
 def MapSynapseReference (lst, row):
     refs = ''
     for pos in lst:
@@ -84,13 +84,17 @@ def MapSynapseReference (lst, row):
 
     return refs
 
+
+
 # # Index of each field in Synapse DB mapped to standard table fmt.
 # # 
 def MapSynapse(d):
     d['Database'] = 'Synapse'
-    d['Mutation'] = 1
+    d['Mutation'] = 1   #  TODO: "Few mutations have multiple signatures in same cell like 
+                        # ABL1 F317L/V/I/C, this means ABL1 has four signatures which are 
+                        # F317L, F317V, F317I, F317C. These need to be in different rows"
     d['Signature'] = 2
-    d['Variant'] = 3
+    d['Variant'] = 99999  # 3
     d['Functionality'] = 4
     d['Impact'] = 99999
     d['Indication'] = 99999    # DISEASE (Column 1)
@@ -162,7 +166,6 @@ dbFd = 1   # stdout will be the 'DB' for now.
 myfile = open('final_record.csv', 'wb+')
 writer = csv.writer(myfile, delimiter=',')
 
-'''
 oncoMap = dict();
 MapOncokb(oncoMap)
 with open('oncoKB_tmp.csv', 'rb') as csvFd:
@@ -170,6 +173,7 @@ with open('oncoKB_tmp.csv', 'rb') as csvFd:
     for row in reader:
         lin = WriteDB(dbFd, oncoMap, row)
         writer.writerow(lin)
+
 civicMap = dict()
 MapCivic(civicMap)
 with open('civic_tmp.csv', 'rb') as csvFd:
@@ -177,7 +181,7 @@ with open('civic_tmp.csv', 'rb') as csvFd:
     for row in reader:
         lin = WriteDB(dbFd, civicMap, row)
         writer.writerow(lin)
-'''
+
 synapseMap = dict()
 MapSynapse(synapseMap)
 with open('synapse_tmp.csv', 'rb') as csvFd:
@@ -186,7 +190,7 @@ with open('synapse_tmp.csv', 'rb') as csvFd:
         lin = WriteDB(dbFd, synapseMap, row)
         writer.writerow(lin)
           
-
+myfile.close()
 
 #Store final data in mysql database.
 
@@ -201,7 +205,8 @@ cur.execute(qry)
 qry = 'DROP TABLE IF EXISTS final_data'
 cur.execute(qry)
 qry = '''
-CREATE TABLE final_data (Data VARCHAR(255), 
+CREATE TABLE final_data (
+    Source VARCHAR(255), 
     Mutation VARCHAR(255), 
     Signature VARCHAR(255), 
     Variant VARCHAR(255), 
@@ -210,7 +215,7 @@ CREATE TABLE final_data (Data VARCHAR(255),
     Indication VARCHAR(255), 
     Domain VARCHAR(255), 
     Classification VARCHAR(255), 
-    Refrence VARCHAR(255));
+    Reference VARCHAR(255));
 '''
 
 cur.execute(qry)
@@ -220,7 +225,11 @@ file  = open('final_record.csv', "rb")
 reader = csv.reader(file)
 for row in reader:
     if len(row) == 10:
-        cur.execute('INSERT INTO final_data (Data,Mutation,Signature,Variant,Functionality,Impact, Indication,Domain,Classification,Refrence) VALUES("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")', (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]))
+        cur.execute('''INSERT INTO final_data (Source, Mutation,Signature,
+                       Variant,Functionality,Impact, Indication,Domain,
+                       Classification,Reference) 
+                       VALUES("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")''', 
+                       (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]))
     else:
         print "db_collate: Error in row len, not written to DB"
         print row
