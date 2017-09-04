@@ -9,19 +9,18 @@ import os
 url = "http://oncokb.org/api/v1/utils/allAnnotatedVariants.txt"
 urlretrieve(url,"oncotxt.txt")
 
-with open('oncotxt.txt', 'r') as infile, open('test.csv', 'w') as outfile:
+with open('oncotxt.txt', 'r') as infile, open('oncocsv.csv', 'w') as outfile:
     in_txt = csv.reader(infile, delimiter = '\t')
     
     out_csv = csv.writer(outfile)
     out_csv.writerows(in_txt)
-with open("test.csv",'r') as f:
+'''with open("test.csv",'r') as f:
     with open("oncocsv.csv",'w') as f1:
         next(f) # skip header line
         for line in f:
-            f1.write(line)
+            f1.write(line)'''
         
 os.remove('oncotxt.txt')
-os.remove('test.csv')
 
 def MapOncokb(d):
     d['Database'] = 'OncoKB'
@@ -87,30 +86,30 @@ MapOncokb(oncoMap)
 
 with open('oncocsv.csv', 'r') as csvFd: 
     reader = csv.reader(csvFd, delimiter=',')
-    for row in reader:      
-        
+    next(reader)
+    for row in reader:              
         lin = WriteDB(dbFd, oncoMap, row)
         writer.writerow(lin)
+os.remove('oncocsv.csv')
         
-
 
 database = MySQLdb.connect(host='localhost', user='root', passwd='root')
 cursor = database.cursor()
-create_database = "CREATE DATABASE IF NOT EXISTS cellworksdata"
+create_database = "CREATE DATABASE IF NOT EXISTS cellworksDATA"
 cursor.execute(create_database)
-database = MySQLdb.connect(host='localhost', user='root', passwd='root', db='cellworksdata')
+database = MySQLdb.connect(host='localhost', user='root', passwd='root', db='cellworksDATA')
 cursor = database.cursor()
-create_table = "CREATE TABLE IF NOT EXISTS cellworkstable (Data VARCHAR(255), Mutation VARCHAR(255), Signature VARCHAR(255), Variant VARCHAR(255), Functionality VARCHAR(255), Impact VARCHAR(255), Indication VARCHAR(255), Domain VARCHAR(255), Classification VARCHAR(255), Reference VARCHAR(255))"
+create_table = "CREATE TABLE IF NOT EXISTS cellworksTABLE (Data VARCHAR(255), Mutation VARCHAR(255), Signature VARCHAR(255), Variant VARCHAR(255), Functionality VARCHAR(255), Impact VARCHAR(255), Indication VARCHAR(255), Domain VARCHAR(255), Classification VARCHAR(255), Reference VARCHAR(255))"
 cursor.execute(create_table)
 with open('finalrecord.csv', "r") as file:
  reader = csv.reader(file)
  for row in reader:
     if len(row) == 10:
-        cursor.execute('INSERT INTO cellworkstable (Data,Mutation,Signature,Variant,Functionality,Impact,Indication,Domain,Classification,Reference) VALUES("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")', (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]))
+        cursor.execute('INSERT INTO cellworksTABLE (Data,Mutation,Signature,Variant,Functionality,Impact,Indication,Domain,Classification,Reference) VALUES("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")', (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]))
     else:
         print('Error in row: ')
         print(row)
 database.commit()
 cursor.close()
-os.remove('oncocsv.csv')
+
 os.remove('finalrecord.csv')
