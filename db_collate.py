@@ -49,7 +49,7 @@ def MapCandl(d):
     d['Indication'] = 99999
     d['Domain'] = 99999
     d['Classification'] = 99999
-    d['Reference'] = 15   # TODO Column 'P'
+    d['Reference'] = 15   # 
 
     return d
 
@@ -141,6 +141,9 @@ def MapFunctionality(str):
          #
          }
 
+    # TODO: Fix so that if mapping is not present, it defaults
+    # to the string sent (and log error somewhere)
+    #
     return functionality[str.strip()]
 
 
@@ -153,7 +156,12 @@ def WriteDB(dbFd, dbMap, row):
     tblRow = 10*['NA']
 
     tblRow[0] = dbMap['Database']
-    tblRow[1] = row [dbMap['Mutation']]
+    try:  
+        tblRow[1] = row [dbMap['Mutation']]
+    except:
+        print 'WriteDB: Offending row'
+        print row
+
     if isinstance (dbMap['Signature'], list):
         tblRow[2] = dbMap['Signature'][0] (dbMap['Signature'][1:], row)
     else:
@@ -183,10 +191,11 @@ def WriteDB(dbFd, dbMap, row):
 
 dbFd = 1   # stdout will be the 'DB' for now.
 
-myfile = open('final_record.csv', 'wb+')
+# final_record.csv will store data from all the databases into
+# one CSV.
+myfile = open('final_record.csv', 'wb+') 
 writer = csv.writer(myfile, delimiter=',')
-
-'''
+print 'processing oncoKB'
 oncoMap = dict();
 MapOncokb(oncoMap)
 with open('oncoKB_tmp.csv', 'rb') as csvFd:
@@ -195,6 +204,7 @@ with open('oncoKB_tmp.csv', 'rb') as csvFd:
         lin = WriteDB(dbFd, oncoMap, row)
         writer.writerow(lin)
 
+print 'processing Civic'
 civicMap = dict()
 MapCivic(civicMap)
 with open('civic_tmp.csv', 'rb') as csvFd:
@@ -203,6 +213,7 @@ with open('civic_tmp.csv', 'rb') as csvFd:
         lin = WriteDB(dbFd, civicMap, row)
         writer.writerow(lin)
 
+print 'processing Synapse'
 synapseMap = dict()
 MapSynapse(synapseMap)
 with open('synapse_tmp.csv', 'rb') as csvFd:
@@ -211,6 +222,7 @@ with open('synapse_tmp.csv', 'rb') as csvFd:
         lin = WriteDB(dbFd, synapseMap, row)
         writer.writerow(lin)
 
+print 'processing docm'
 docmMap = dict()
 MapDocm(docmMap)
 with open('docm_tmp.tsv', 'rb') as csvFd:
@@ -218,13 +230,17 @@ with open('docm_tmp.tsv', 'rb') as csvFd:
     for row in reader:
         lin = WriteDB(dbFd, docmMap, row)
         writer.writerow(lin)
-'''
 
+print 'processing Candl'
 candlMap = dict()
 MapCandl(candlMap)
 with open('candl_tmp.csv', 'rb') as csvFd:
     reader = csv.reader(csvFd, delimiter=',')
     for row in reader:
+        if len(row) < 10:
+            print 'Error in row: '
+            print row
+            continue
         lin = WriteDB(dbFd, candlMap, row)
         writer.writerow(lin)
          
@@ -253,7 +269,7 @@ CREATE TABLE final_data (
     Indication VARCHAR(255), 
     Domain VARCHAR(255), 
     Classification VARCHAR(255), 
-    Reference VARCHAR(255));
+    Reference VARCHAR(2048));
 '''
 
 cur.execute(qry)
@@ -262,7 +278,6 @@ cur.execute(qry)
 file  = open('final_record.csv', "rb")
 reader = csv.reader(file)
 for row in reader:
-    print row
     if len(row) == 10:
         cur.execute('''INSERT INTO final_data (Source, Mutation,Signature,
                        Variant,Functionality,Impact, Indication,Domain,
@@ -273,7 +288,6 @@ for row in reader:
         print "db_collate: Error in row len, not written to DB"
         print row
 
-    #print row
 db_conn.commit()
 cur.close()
 
