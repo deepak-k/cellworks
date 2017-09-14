@@ -291,7 +291,7 @@ CREATE TABLE final_data (
 cur.execute(qry)
 
 file  = open('final_record.csv', "rb")
-reader = csv.reader(file), quote=csv.QUOTE_NONE
+reader = csv.reader(file)
 
 next(reader, None) # Skipping header
 for row in reader:
