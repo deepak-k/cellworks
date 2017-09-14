@@ -3,6 +3,18 @@
 # Last Modified: Mon Aug 21 18:43:52 UTC 2017
 #
 
+# CHANGED COLUMN
+#1) Mutation  REQD
+#2) Signature  REQD
+#3) Functionality  REQD
+#4) Impact
+#5) Mutation Definition Tag
+#6) Indication ID
+#7) Domain Name
+#8) Domain region
+#9) Reference  REQD
+
+
 import csv
 import MySQLdb
 
@@ -19,16 +31,15 @@ def MapDocm(d):
     d['Database'] = 'Docm'
     d['Mutation'] = 7
     d['Signature'] = [MapDocmSignature, 9]   # IMPT: Remove the "p."
-    d['Variant'] = 99999
     d['Functionality'] = 99999
     d['Impact'] = 99999
-    d['Indication'] = 99999
-    d['Domain'] = 99999
-    d['Classification'] = 99999
+    d['Mutation_definition_Tag'] = 99999
+    d['Indication_ID'] = 99999
+    d['Domain_Name'] = 99999
+    d['Domain_Region'] = 99999
     d['Reference'] = 11
 
     return d
-
 
 
 # Candl sign is a concate of row C,D,E
@@ -38,17 +49,18 @@ def MapCandlSignature(lst,row):
     sig = row[lst[0]] + row[lst[1]] + row[lst[2]]
     return sig
 
+
 # Use candl
 def MapCandl(d):
     d['Database'] = 'Candl'
     d['Mutation'] = 1
     d['Signature'] = [MapCandlSignature, 2,3,4] # Concatination of Columns C, D & E
-    d['Variant'] = 99999
     d['Functionality'] = 99999
     d['Impact'] = 99999
-    d['Indication'] = 99999
-    d['Domain'] = 99999
-    d['Classification'] = 99999
+    d['Mutation_definition_Tag'] = 99999
+    d['Indication_ID'] = 99999
+    d['Domain_Name'] = 99999
+    d['Domain_Region'] = 99999
     d['Reference'] = 15   # 
 
     return d
@@ -60,16 +72,18 @@ def MapCandl(d):
 def MapOncokb(d):
     d['Database'] = 'OncoKB'
     d['Mutation'] = 0
-    d['Signature'] = 2   # BUG: Remove Truncating Mutation, Promoter Mutation
-    d['Variant'] = 99999
+    d['Signature'] = 1   # BUG: Remove Truncating Mutation, Promoter Mutation
     d['Functionality'] = 3
     d['Impact'] = 99999
-    d['Indication'] = 99999
-    d['Domain'] = 99999
-    d['Classification'] = 99999
+    d['Mutation_definition_Tag'] = 99999
+    d['Indication_ID'] = 99999
+    d['Domain_Name'] = 99999
+    d['Domain_Region'] = 99999
     d['Reference'] = 4
 
     return d
+
+
 
 # Index of each field in Civic DB mapped to standard table fmt.
 # 
@@ -77,12 +91,12 @@ def MapCivic(d):
     d['Database'] = 'Civic'
     d['Mutation'] = 0
     d['Signature'] = 2
-    d['Variant'] = 3
     d['Functionality'] = 99999
     d['Impact'] = 99999
-    d['Indication'] = 3   # Changed; mapped to 'Disease'
-    d['Domain'] = 99999
-    d['Classification'] = 99999
+    d['Mutation_definition_Tag'] = 99999
+    d['Indication_ID'] = 99999   # Changed; mapped to 'Disease'
+    d['Domain_Name'] = 99999
+    d['Domain_Region'] = 99999
     d['Reference'] = 11
 
     return d
@@ -111,16 +125,15 @@ def MapSynapse(d):
                         # ABL1 F317L/V/I/C, this means ABL1 has four signatures which are 
                         # F317L, F317V, F317I, F317C. These need to be in different rows"
     d['Signature'] = 2
-    d['Variant'] = 99999  # 3
     d['Functionality'] = 4
     d['Impact'] = 99999
-    d['Indication'] = 99999    # DISEASE (Column 1)
-    d['Domain'] = 99999
-    d['Classification'] = 99999
+    d['Mutation_definition_Tag'] = 99999    # DISEASE (Column 1)
+    d['Indication_ID'] = 99999
+    d['Domain_Name'] = 99999
+    d['Domain_Region'] = 99999
     d['Reference'] = [MapSynapseReference, 9,14,19,24,29,38,43]  # PMID cols: J,O,T,Y,AD,AN,AS
 
     return d    
-
 
 
 # Standardise fuctionality to LOF, GOF, etc in the various DB's
@@ -147,8 +160,6 @@ def MapFunctionality(str):
     return functionality[str.strip()]
 
 
-
-
 # Copy over the row from CSV to standard fmt and then write it out.
 # Note: Currently simply writes to stdout.
 #
@@ -166,25 +177,25 @@ def WriteDB(dbFd, dbMap, row):
         tblRow[2] = dbMap['Signature'][0] (dbMap['Signature'][1:], row)
     else:
         tblRow[2] =  (row [dbMap['Signature']])
-    if (dbMap['Variant'] != 99999):
-        tblRow[3] = (row [dbMap['Variant']])
     if (dbMap['Functionality'] != 99999):
-        tblRow[4] = MapFunctionality (row [dbMap['Functionality']])
+        tblRow[3] = MapFunctionality (row [dbMap['Functionality']])
     if (dbMap['Impact'] != 99999):
-        tblRow[5] = row [dbMap['Impact']]
-    if (dbMap['Indication'] != 99999):
-        tblRow[6] = row [dbMap['Indication']]
-    if (dbMap['Domain'] != 99999):
-        tblRow[7] = row [dbMap['Domain']]
-    if (dbMap['Classification'] != 99999):
-        tblRow[8] = row [dbMap['Classification']]
+        tblRow[4] = row [dbMap['Impact']]
+    if (dbMap['Mutation_definition_Tag'] != 99999):
+        tblRow[5] = row [dbMap['Indication']]
+    if (dbMap['Indication_ID'] != 99999):
+        tblRow[6] = row [dbMap['Domain']]
+    if (dbMap['Domain_Name'] != 99999):
+        tblRow[7] = row [dbMap['Classification']]
+    if (dbMap['Domain_Region'] != 99999):
+        tblRow[7] = row [dbMap['Domain_Region']]
+
     if isinstance(dbMap['Reference'], list):
-        tblRow[9] = dbMap['Reference'][0] (dbMap['Reference'][1:], row)
+        tblRow[8] = dbMap['Reference'][0] (dbMap['Reference'][1:], row)
     elif (dbMap['Reference'] != 99999):
             tblRow[9] = row [dbMap['Reference']]
 
     return tblRow     
-
 
 
 ##  main()
@@ -195,6 +206,9 @@ dbFd = 1   # stdout will be the 'DB' for now.
 # one CSV.
 myfile = open('final_record.csv', 'wb+') 
 writer = csv.writer(myfile, delimiter=',')
+lin = ['Source', 'Mutation','Signature','Functionality','Impact','Mutation_Definition_Tag','Indication_ID','Domain_Name','Domain_region','Reference']
+writer.writerow(lin)
+
 print 'processing oncoKB'
 oncoMap = dict();
 MapOncokb(oncoMap)
@@ -243,7 +257,7 @@ with open('candl_tmp.csv', 'rb') as csvFd:
             continue
         lin = WriteDB(dbFd, candlMap, row)
         writer.writerow(lin)
-         
+
 myfile.close()
 
 #Store final data in mysql database.
@@ -273,7 +287,6 @@ CREATE TABLE final_data (
 '''
 
 cur.execute(qry)
-
 
 file  = open('final_record.csv', "rb")
 reader = csv.reader(file)
