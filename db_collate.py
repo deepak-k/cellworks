@@ -201,7 +201,7 @@ def FormatRow(dbFd, dbMap, row):
 
 
 def FilterRow(row):
-    if (row[3] == 'SOF' or row[3] == 'LOF' or row[3] == 'COF' or row[3] == 'GOF' or row[3] == 'NA'
+    if ( (row[3] == 'SOF' or row[3] == 'LOF' or row[3] == 'COF' or row[3] == 'GOF' or row[3] == 'NA')
             and (row[2] != 'Promoter Mutations' and row[2] != 'Promoter Hypermethylation' and row[2] != 'Truncating Mutations'
                 and row[2] != 'Amplification' and row[2] != 'Amplification' and row[2] != 'Copy Number Loss'
                 and row[2] != 'Hypermethylation' and row[2] != 'Overexpression' and row[2] != 'Deletion')
