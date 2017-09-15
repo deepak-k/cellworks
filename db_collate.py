@@ -200,16 +200,33 @@ def FormatRow(dbFd, dbMap, row):
     return tblRow     
 
 
+def FilterRow(row):
+    if (row[3] == 'SOF' or row[3] == 'LOF' or row[3] == 'COF' or row[3] == 'GOF' or row[3] == 'NA'
+            or (row[2] != 'Promoter Mutations' and row[2] != 'Promoter Hypermethylation' and row[2] != 'Truncating Mutations'
+                and row[2] != 'Amplification' and row[2] != 'Amplification' and row[2] != 'Copy Number Loss'
+                and row[2] != 'Hypermethylation' and row[2] != 'Overexpression' and row[2] != 'Deletion')
+        ):
+        return True
+    else:
+        return False
+
 ##  main()
 
 dbFd = 1   # stdout will be the 'DB' for now.
 
 # final_record.csv will store data from all the databases into
 # one CSV.
-myfile = open('final_record.csv', 'wb+') 
-writer = csv.writer(myfile, delimiter=',')
+dbfd = open('final_record.csv', 'wb+') 
+db_writer = csv.writer(dbfd, delimiter=',')
 lin = ['Source', 'Mutation','Signature','Functionality','Impact','Mutation_Definition_Tag','Indication_ID','Domain_Name','Domain_region','Reference']
-writer.writerow(lin)
+db_writer.writerow(lin)  # Write Header.
+
+# File with filters
+filter_fd = open('filter_record.csv', 'wb+') 
+filter_writer = csv.writer(filter_fd, delimiter=',')
+lin = ['Source', 'Mutation','Signature','Functionality','Impact','Mutation_Definition_Tag','Indication_ID','Domain_Name','Domain_region','Reference']
+filter_writer.writerow(lin)  # Write Header.
+
 
 print 'processing oncoKB'
 oncoMap = dict();
@@ -218,8 +235,9 @@ with open('oncoKB_tmp.csv', 'rb') as csvFd:
     reader = csv.reader(csvFd, delimiter='\t')
     for row in reader:
         lin = FormatRow(dbFd, oncoMap, row)
-        writer.writerow(lin)
-
+        if FilterRow(lin):
+            filter_writer.writerow(lin)
+        db_writer.writerow(lin)
 print 'processing Civic'
 civicMap = dict()
 MapCivic(civicMap)
@@ -227,7 +245,9 @@ with open('civic_tmp.csv', 'rb') as csvFd:
     reader = csv.reader(csvFd, delimiter='\t')
     for row in reader:
         lin = FormatRow(dbFd, civicMap, row)
-        writer.writerow(lin)
+        db_writer.writerow(lin)
+        if FilterRow(lin):
+            filter_writer.writerow(lin)
 
 print 'processing Synapse'
 synapseMap = dict()
@@ -236,7 +256,9 @@ with open('synapse_tmp.csv', 'rb') as csvFd:
     reader = csv.reader(csvFd, delimiter=',')
     for row in reader:
         lin = FormatRow(dbFd, synapseMap, row)
-        writer.writerow(lin)
+        db_writer.writerow(lin)
+        if FilterRow(lin):
+            filter_writer.writerow(lin)
 
 print 'processing docm'
 docmMap = dict()
@@ -245,7 +267,9 @@ with open('docm_tmp.tsv', 'rb') as csvFd:
     reader = csv.reader(csvFd, delimiter='\t')
     for row in reader:
         lin = FormatRow(dbFd, docmMap, row)
-        writer.writerow(lin)
+        db_writer.writerow(lin)
+        if FilterRow(lin):
+            filter_writer.writerow(lin)
 
 print 'processing Candl'
 candlMap = dict()
@@ -258,9 +282,13 @@ with open('candl_tmp.csv', 'rb') as csvFd:
             print row
             continue
         lin = FormatRow(dbFd, candlMap, row)
-        writer.writerow(lin)
+        db_writer.writerow(lin)
+        if FilterRow(lin):
+            filter_writer.writerow(lin)
+        db_writer.writerow(lin)
 
-myfile.close()
+dbfd.close()
+filter_fd.close() 
 
 #Store final data in mysql database.
 
