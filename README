@@ -1,0 +1,11 @@
+Code to create one CSV and database table with content from
+OncoKB, Civic, Synapse, Docm and Candl
+
+Input is downloaded CSV from these databases, output final_record.csv 
+and MySQL table final_data is created in Cellworks database.
+
+TODO:
+
+1. Split DB and CSV.
+2. Use config for all hard-coded items like input files, output files
+   database, table, etc.
