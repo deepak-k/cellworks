@@ -2,8 +2,7 @@
 #
 # Last Modified: Mon Aug 21 18:43:52 UTC 2017
 #
-import pymysql
-pymysql.install_as_MySQLdb()
+
 import csv
 import MySQLdb
 
@@ -184,13 +183,13 @@ def WriteDB(dbFd, dbMap, row):
 
 dbFd = 1   # stdout will be the 'DB' for now.
 
-myfile = open('final_record.csv', 'w')
+myfile = open('final_record.csv', 'wb+')
 writer = csv.writer(myfile, delimiter=',')
 
 
 oncoMap = dict();
 MapOncokb(oncoMap)
-with open('oncoKB_tmp.csv', 'r') as csvFd:
+with open('oncoKB_tmp.csv', 'rb') as csvFd:
     reader = csv.reader(csvFd, delimiter='\t')
     for row in reader:
         lin = WriteDB(dbFd, oncoMap, row)
@@ -198,7 +197,7 @@ with open('oncoKB_tmp.csv', 'r') as csvFd:
 
 civicMap = dict()
 MapCivic(civicMap)
-with open('civic_tmp.csv', 'r') as csvFd:
+with open('civic_tmp.csv', 'rb') as csvFd:
     reader = csv.reader(csvFd, delimiter='\t')
     for row in reader:
         lin = WriteDB(dbFd, civicMap, row)
@@ -206,7 +205,7 @@ with open('civic_tmp.csv', 'r') as csvFd:
 
 synapseMap = dict()
 MapSynapse(synapseMap)
-with open('synapse_tmp.csv', 'r') as csvFd:
+with open('synapse_tmp.csv', 'rb') as csvFd:
     reader = csv.reader(csvFd, delimiter=',')
     for row in reader:
         lin = WriteDB(dbFd, synapseMap, row)
@@ -214,7 +213,7 @@ with open('synapse_tmp.csv', 'r') as csvFd:
 
 docmMap = dict()
 MapDocm(docmMap)
-with open('docm_tmp.tsv', 'r') as csvFd:
+with open('docm_tmp.tsv', 'rb') as csvFd:
     reader = csv.reader(csvFd, delimiter='\t')
     for row in reader:
         lin = WriteDB(dbFd, docmMap, row)
@@ -223,7 +222,7 @@ with open('docm_tmp.tsv', 'r') as csvFd:
 
 candlMap = dict()
 MapCandl(candlMap)
-with open('candl_tmp.csv', 'r') as csvFd:
+with open('candl_tmp.csv', 'rb') as csvFd:
     reader = csv.reader(csvFd, delimiter=',')
     for row in reader:
         lin = WriteDB(dbFd, candlMap, row)
@@ -260,7 +259,7 @@ CREATE TABLE final_data (
 cur.execute(qry)
 
 
-file  = open('final_record.csv', "r")
+file  = open('final_record.csv', "rb")
 reader = csv.reader(file)
 for row in reader:
     
@@ -271,8 +270,8 @@ for row in reader:
                        VALUES("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")''', 
                        (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]))
     else:
-        print("db_collate: Error in row len, not written to DB")
-        print(row)
+        print "db_collate: Error in row len, not written to DB"
+        print row
 
     #print row
 db_conn.commit()
